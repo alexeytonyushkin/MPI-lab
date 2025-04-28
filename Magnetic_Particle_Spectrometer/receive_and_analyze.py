@@ -58,29 +58,25 @@ def receive_raw_voltage(daq_location, sample_rate, n_samps, trigger_location=Non
         voltage_raw = task.read(number_of_samples_per_channel= n_samps)
         return voltage_raw
 
-def DC_offset(current):
-    power_supply = wave_gen.connect_power_supply('ASRL5::INSTR') #connecting via usb
-    voltage = 12 #volts since thisis the max of the power supply
-    if power_supply:
-        wave_gen.send_dc_voltage(power_supply, voltage, current)
-        return power_supply
-
 def get_background(daq_location, source_location, trigger_location, sample_rate, num_periods, gpib_address,
                    amplitude, frequency, channel, dc_current):
     num_pts_per_period = sample_rate/ frequency #Fs/F_drive
     num_samples = int(num_periods * num_pts_per_period)
 
     #Connect the waveform generator and send a signal for background measurement
-    waveform_generator = wave_gen.connect_waveform_generator(gpib_address)
-    wave_gen.send_voltage(waveform_generator, amplitude, frequency, channel)
+    waveform_generator = None
+    if amplitude is not None:
+        waveform_generator = wave_gen.connect_waveform_generator(gpib_address)
+        wave_gen.send_voltage(waveform_generator, amplitude, frequency, channel)
 
     #Connect to the DC power supply and send the current through the helmholtz coils:
-    power_supply = DC_offset(dc_current)
+    power_supply = wave_gen.DC_offset(dc_current)
 
     background = receive_raw_voltage(daq_location, sample_rate, num_samples, trigger_location) #receive the background (raw daq readout)
 
     #Turn the waveform generator and power supply off:
-    wave_gen.turn_off(waveform_generator, channel)
+    if waveform_generator is not None:
+        wave_gen.turn_off(waveform_generator, channel)
     if power_supply:
         wave_gen.turn_off_dc_output(power_supply)
         power_supply.close()
@@ -119,11 +115,15 @@ def get_sample_signal(daq_location, sense_location, trigger_location, sample_rat
     num_samples = int(num_periods * num_pts_per_period)
 
     #Connect to the DC power supply and send the current through the helmholtz coils:
-    power_supply = DC_offset(dc_current)
+    power_supply = None
+    if dc_current is not None:
+        power_supply = wave_gen.DC_offset(dc_current)
 
     #connect waveform generator and send signal:
-    waveform_generator = wave_gen.connect_waveform_generator(gpib_address)
-    wave_gen.send_voltage(waveform_generator, amplitude, frequency, channel)
+    waveform_generator = None
+    if amplitude is not None:
+        waveform_generator = wave_gen.connect_waveform_generator(gpib_address)
+        wave_gen.send_voltage(waveform_generator, amplitude, frequency, channel)
 
     # Receive signal
     signal_with_background = receive_raw_voltage(daq_location, sample_rate, num_samples, trigger_location)
@@ -132,16 +132,18 @@ def get_sample_signal(daq_location, sense_location, trigger_location, sample_rat
     i_rms = get_rms_current(sense_location, fs=sample_rate, num_samples=num_samples, trigger_location=trigger_location)
 
     #Turn off waveform generator and power supply and close:
-    wave_gen.turn_off(waveform_generator, channel)
-    if power_supply:
+    if waveform_generator is not None:
+        wave_gen.turn_off(waveform_generator, channel)
+    if power_supply is not None:
         wave_gen.turn_off_dc_output(power_supply)
         power_supply.close()
 
-    signal_with_background_magnitude, signal_frequency, sample_with_background_phase, signal_complex = fourier(signal_with_background, sample_rate,
-                                                                 num_samples)
+    signal_with_background_magnitude, signal_frequency, sample_with_background_phase, signal_with_background_complex =\
+                                    fourier(signal_with_background, sample_rate, num_samples)
+
 
     # subtract background:
-    sample_complex = signal_complex - background_complex
+    sample_complex = signal_with_background_complex - background_complex
     sample_magnitude = np.abs(sample_complex)
     sample_phase = np.angle(sample_complex)
 
@@ -149,7 +151,8 @@ def get_sample_signal(daq_location, sense_location, trigger_location, sample_rat
     if isClean:
         sample_magnitude = odd_harmonics(sample_magnitude, signal_frequency, frequency, sample_rate) #will give the magnitudes of the odd harmonics only
 
-    return num_samples, sample_magnitude, signal_frequency, signal_with_background, sample_phase, i_rms
+    return (num_samples, sample_magnitude, signal_frequency, signal_with_background, sample_phase,
+            i_rms, signal_with_background_complex, sample_complex)
 
 def fourier(waveform, sample_rate, num_samples):
     #Find real and imaginary amplitudes
