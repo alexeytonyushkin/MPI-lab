@@ -871,7 +871,7 @@ class App(ctk.CTk):
         self.mode = "Static DC with varying ac."
         num_steps = 50 #arrays will be of size 50
         harmonic_orders = list(range(1, 12))  #2nd to 11th
-        harmonic_indices = [100, 200, 300,400, 500, 600, 700, 800, 900, 1000, 1100]
+        harmonic_indices = [1, 2, 3,4, 5, 6, 7, 8, 9, 10, 11]
 
         self.max_H_field = np.zeros(num_steps)
         self.harmonics = {order: np.zeros(num_steps) for order in harmonic_orders}
@@ -879,6 +879,9 @@ class App(ctk.CTk):
 
         sample_rate = 100000  # no need for more than that for the 11th harmonic
         num_periods = int(self.num_periods)
+
+        for i in range(len(harmonic_indices)):                          #the frequency array varies based on the number of samples
+            harmonic_indices[i]= harmonic_indices[i] * int(num_periods)
 
         daq_signal = self.daq_signal_channel
         daq_source = self.daq_current_channel
@@ -927,7 +930,7 @@ class App(ctk.CTk):
         self.mode = "Static ac with varying DC."
         num_steps = 200 # arrays will be of size 200
         harmonic_orders = list(range(1, 12))  # 2nd to 11th
-        harmonic_indices = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100]
+        harmonic_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
         self.i_dc = np.zeros(num_steps)
         self.harmonics = {order: np.zeros(num_steps) for order in harmonic_orders}
@@ -935,6 +938,9 @@ class App(ctk.CTk):
 
         sample_rate = 100000  # no need for more than that for the 11th harmonic
         num_periods = int(self.num_periods)
+
+        for i in range(len(harmonic_indices)):                          #the frequency array varies based on the number of samples
+            harmonic_indices[i]= harmonic_indices[i] * int(num_periods)
 
         daq_signal = self.daq_signal_channel
         daq_source = self.daq_current_channel
