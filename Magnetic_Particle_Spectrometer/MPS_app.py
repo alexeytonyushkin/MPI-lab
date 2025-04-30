@@ -19,6 +19,7 @@ ctk.set_default_color_theme("dark-blue")
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.phases = None
         self.num_steps = 50
         self.i_dc = None
         self.mode = None
@@ -892,6 +893,8 @@ class App(ctk.CTk):
 
         self.max_H_field = np.zeros(num_steps)
         self.harmonics = {order: np.zeros(num_steps) for order in harmonic_orders}
+        self.phases = {order: np.zeros(num_steps) for order in harmonic_orders}
+
         v_amplitude = 0 #start at 0...
 
         sample_rate = 100000  # no need for more than that for the 11th harmonic
@@ -940,6 +943,7 @@ class App(ctk.CTk):
             # Store all harmonics
             for i, order in enumerate(harmonic_orders):
                 self.harmonics[order][l] = sample_magnitude[harmonic_indices[i]]
+                self.phases[order][l] = sample_phase[harmonic_indices[i]]
 
             v_amplitude += step_size
             time.sleep(0.01)
@@ -961,6 +965,7 @@ class App(ctk.CTk):
 
         self.i_dc = np.zeros(num_steps)
         self.harmonics = {order: np.zeros(num_steps) for order in harmonic_orders}
+        self.phases = {order: np.zeros(num_steps) for order in harmonic_orders}
         v_amplitude = 0  # start at 0...
 
         sample_rate = 100000  # no need for more than that for the 11th harmonic
@@ -1006,6 +1011,7 @@ class App(ctk.CTk):
             # Store all harmonics
             for i, order in enumerate(harmonic_orders):
                 self.harmonics[order][l] = sample_magnitude[harmonic_indices[i]]
+                self.phases[order][l] = sample_phase[harmonic_indices[i]]
 
             dc_current += step_size
             time.sleep(0.01)
@@ -1017,18 +1023,22 @@ class App(ctk.CTk):
     def plot_harmonics(self, field, dc_static=False):
         self.ax1.clear()
         self.ax2.clear()
+        self.ax3.clear()
+        self.ax4.clear()
+        self.ax5.clear()
+        self.ax6.clear()
         if dc_static:
             field_txt = "μo H (mT)"
         else:
             field_txt = "I_DC (A)"
 
-        self.ax1.set_title("Odd Harmonics vs Field", fontsize=11)
+        self.ax1.set_title("Odd Harmonics, Magnitude vs Field", fontsize=11)
         self.ax1.set_xlabel(field_txt, fontsize=10)
-        self.ax1.set_ylabel("Harmonics", fontsize=10)
+        self.ax1.set_ylabel("Magnitude", fontsize=10)
 
-        self.ax2.set_title("Even Harmonics vs Field", fontsize=11)
+        self.ax2.set_title("Even Harmonics, Magnitude vs Field", fontsize=11)
         self.ax2.set_xlabel(field_txt, fontsize=10)
-        self.ax2.set_ylabel("Harmonics", fontsize=10)
+        self.ax2.set_ylabel("Magnitude", fontsize=10)
 
         for order in [3, 5, 7, 9, 11]: #odd harmonics
             self.ax1.plot(field, self.harmonics[order],
@@ -1042,6 +1052,34 @@ class App(ctk.CTk):
         self.canvas1.draw()
         self.canvas2.draw()
 
+        #Plot harmonic2/harmonic3:
+        self.ax3.set_title("2nd/3rd Harmonics, Magnitude vs Field", fontsize=11)
+        self.ax3.set_xlabel(field_txt, fontsize=10)
+        self.ax3.set_ylabel("Harmonics", fontsize=10)
+
+        self.ax3.plot(field, self.harmonics[2]/self.harmonics[3])
+        self.canvas3.draw()
+
+        #Plot Phases:
+        self.ax4.set_title("Odd Harmonics, Phase vs Field", fontsize=11)
+        self.ax4.set_xlabel(field_txt, fontsize=10)
+        self.ax4.set_ylabel("Phase (°)", fontsize=10)
+
+        self.ax5.set_title("Even Harmonics, Phase vs Field", fontsize=11)
+        self.ax5.set_xlabel(field_txt, fontsize=10)
+        self.ax5.set_ylabel("Phase (°)", fontsize=10)
+
+        for order in [3, 5, 7, 9, 11]: #odd harmonics
+            self.ax4.plot(field, self.phases[order]*(180/np.pi),
+                          label=f'{order}rd Harmonic' if order == 3 else f'{order}th Harmonic')
+
+        for order in [2, 4, 6, 8, 10]: #Even Harmonics
+            self.ax5.plot(field, self.phases[order]*(180/np.pi),
+                          label=f'{order}nd Harmonic' if order == 2 else f'{order}th Harmonic')
+        self.ax4.legend()
+        self.ax5.legend()
+        self.canvas4.draw()
+        self.canvas5.draw()
     ####################### function to save results #########################
     def save_results(self):
         filename = filedialog.asksaveasfilename(defaultextension=".mat",
@@ -1117,12 +1155,27 @@ class App(ctk.CTk):
 
                 if odd_harmonics:
                     for i in [1, 3, 5, 7, 9, 11]:
-                        i_str = "harmonic_"+str(i)
+                        i_str = "harmonic_"+str(i)+"_magnitude"
                         data[i_str] = odd_harmonics[i]
                 if even_harmonics:
                     for i in [2, 4, 6, 8, 10]:
-                        i_str = "harmonic_" + str(i)
+                        i_str = "harmonic_" + str(i)+"_magnitude"
                         data[i_str] = even_harmonics[i]
+
+            if hasattr(self, 'phases') and self.phases is not None:
+                odd_phases = {order: self.phases[order] for order in [1, 3, 5, 7, 9, 11] if
+                                 self.phases[order] is not None}
+                even_phases = {order: self.phases[order] for order in [2, 4, 6, 8, 10] if
+                                  self.phases[order] is not None}
+
+                if odd_phases:
+                    for i in [1, 3, 5, 7, 9, 11]:
+                        i_str = "harmonic_"+str(i)+"_phase"
+                        data[i_str] = odd_phases[i]
+                if even_phases:
+                    for i in [2, 4, 6, 8, 10]:
+                        i_str = "harmonic_" + str(i)+"_phase"
+                        data[i_str] = even_phases[i]
 
             # Save the dictionary to a MATLAB file
             savemat(filename, data)
