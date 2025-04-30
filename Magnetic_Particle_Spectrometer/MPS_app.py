@@ -19,6 +19,7 @@ ctk.set_default_color_theme("dark-blue")
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.num_steps = 50
         self.i_dc = None
         self.mode = None
         self.harmonics = None
@@ -513,7 +514,7 @@ class App(ctk.CTk):
         dropdown_window.geometry("200x150")
 
         dropdown_window.attributes("-topmost", True)
-        frame = ctk.CTkFrame(dropdown_window)
+        frame = ctk.CTkFrame(dropdown_window, bg_color="gray")
         frame.pack(fill="both", expand=True)
 
         scrollbar = ctk.CTkScrollbar(frame)
@@ -532,8 +533,21 @@ class App(ctk.CTk):
                 threading.Thread(target=self.auto_mode_static_ac).start()
             elif selected == "Run with static DC":
                 threading.Thread(target=self.auto_mode_static_dc).start()
-
         listbox.bind("<<ListboxSelect>>", on_select)
+
+        num_steps_lbl = ctk.CTkLabel(frame, text="num_steps", bg_color="white")
+        num_steps_lbl.place(relx=0.25, rely=0.7, relwidth=0.4, anchor="center")
+        num_steps_entry = ctk.CTkEntry(frame, bg_color="white")
+        num_steps_entry.place(relx=0.7, rely=0.7, relwidth=0.4, anchor="center")
+
+        num_steps_entry.insert(0, str(self.num_steps))
+
+        def save_values():
+            # Save waveform parameters
+            self.num_steps = int(num_steps_entry.get())
+
+        save_button = ctk.CTkButton(frame, text="Save Settings", command=save_values)
+        save_button.place(relx=0.5, rely=0.9, relwidth=0.6, anchor="center")
     #####################functions to run data#####################
     def calibrate_H_V(self):
         self.H_cal = np.zeros(50)               #array to store the calibrated field
@@ -869,7 +883,10 @@ class App(ctk.CTk):
 
     def auto_mode_static_dc(self): #To record harmonics and compare them
         self.mode = "Static DC with varying ac."
-        num_steps = 50 #arrays will be of size 50
+        num_steps = self.num_steps
+        max_v= 25 * (1/self.slope) #the max field we want is 25mT
+        step_size = max_v / num_steps
+
         harmonic_orders = list(range(1, 12))  #2nd to 11th
         harmonic_indices = [1, 2, 3,4, 5, 6, 7, 8, 9, 10, 11]
 
@@ -919,7 +936,7 @@ class App(ctk.CTk):
             for i, order in enumerate(harmonic_orders):
                 self.harmonics[order][l] = sample_magnitude[harmonic_indices[i]]
 
-            v_amplitude += 0.05
+            v_amplitude += step_size
             time.sleep(0.01)
         if power_supply:
             wave_gen.turn_off_dc_output(power_supply)
@@ -928,7 +945,10 @@ class App(ctk.CTk):
 
     def auto_mode_static_ac(self):
         self.mode = "Static ac with varying DC."
-        num_steps = 200 # arrays will be of size 200
+        num_steps = self.num_steps
+        max_current = 10 #going from 0 to 10 A
+        step_size = max_current/ num_steps
+
         harmonic_orders = list(range(1, 12))  # 2nd to 11th
         harmonic_indices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
@@ -980,7 +1000,7 @@ class App(ctk.CTk):
             for i, order in enumerate(harmonic_orders):
                 self.harmonics[order][l] = sample_magnitude[harmonic_indices[i]]
 
-            dc_current += 0.05
+            dc_current += step_size
             time.sleep(0.01)
         wave_gen.turn_off_dc_output(power_supply)
         power_supply.close()
