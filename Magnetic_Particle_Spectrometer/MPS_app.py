@@ -912,19 +912,24 @@ class App(ctk.CTk):
         # Get the dc current you want to run through the helmoholtz coils:
         dc_current = float(self.dc_offset)  # Amps
 
-        #check which supply remains static:
+        #turn on dc offset:
         power_supply = wave_gen.DC_offset(dc_current)
+        #connect to the waveform generator:
+        waveform_generator = wave_gen.connect_waveform_generator(gpib_address=gpib_address)
+        wave_gen.send_voltage(waveform_generator, v_amplitude, frequency, channel)
         for l in range(num_steps):
             if v_amplitude > 4.5:
                 v_amplitude = 0
+            else:
+                wave_gen.send_voltage(waveform_generator, v_amplitude, frequency, channel)
 
             background_complex = self.background_frequency_array_complex
 
             # get the sample's data:
             num_samples, sample_magnitude, signal_frequency, signal_with_background, sample_phase, i_rms,\
                 signal_with_background_complex, sample_complex = analyze.get_sample_signal(
-                daq_signal, daq_source, daq_trigger, sample_rate, num_periods, gpib_address, v_amplitude,
-                frequency, channel, dc_current=None, background_complex=background_complex, isClean=False)
+                daq_signal, daq_source, daq_trigger, sample_rate, num_periods, gpib_address, amplitude=None,
+                frequency=frequency, channel=channel, dc_current=None, background_complex=background_complex, isClean=False)
 
             self.frequency_array_magnitude = sample_magnitude
 
@@ -941,6 +946,8 @@ class App(ctk.CTk):
         if power_supply:
             wave_gen.turn_off_dc_output(power_supply)
             power_supply.close()
+        if waveform_generator:
+            wave_gen.turn_off(waveform_generator, channel)
         self.plot_harmonics(field=self.max_H_field,dc_static=True)
 
     def auto_mode_static_ac(self):
