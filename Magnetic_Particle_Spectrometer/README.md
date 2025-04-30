@@ -143,8 +143,7 @@ To run this application, you'll need Python 3.7+ installed along with the requir
    - **Functionality**: 
      -When clicked, the system will sweep through a range of ac fields from 0 till 2.45V ~ 20mT
      -Harmonics data from the first till the eleventh harmonic will be recorded and plotted after the run
-#### Note:
-    - You may decide how many datapoints you want to save for each array by adjusting num_steps and saving the value (press the "Save Settings" button)
+- **Note**: You may decide how many datapoints you want to save for each array by adjusting num_steps and saving the value (press the "Save Settings" button)
 ---
 
 ## Usage Instructions
