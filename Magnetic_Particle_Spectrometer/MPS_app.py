@@ -39,7 +39,7 @@ class App(ctk.CTk):
         self.frequency = 1000  # Default Frequency (Hz)
         self.channel = "1"
         self.dc_offset = 0
-        self.only_odd_harmonics = False
+        self.only_harmonics = False
         self.triggering_enabled = True
 
         # DAQ Card Parameters
@@ -331,16 +331,16 @@ class App(ctk.CTk):
         dc_entry.place(x=x_spacing + input_width + self.width * 0.02, y=y, anchor="center")
         y += self.height * 0.06
 
-        # Odd harmonics?
-        odd_label = ctk.CTkLabel(small_frame, text="Only Odd Harmonics?", font=label_font)
-        odd_label.place(x=x_spacing, y=y, anchor="center")
+        # Only Plot harmonics?
+        harmonics_label = ctk.CTkLabel(small_frame, text="Only Plot Harmonics?", font=label_font)
+        harmonics_label.place(x=x_spacing, y=y, anchor="center")
         yes_radio = ctk.CTkRadioButton(small_frame, text="Yes", fg_color='blue', hover_color="white", font=label_font)
         yes_radio.place(x=x_spacing + input_width + self.width * 0.02, y=y, anchor="center")
         no_radio = ctk.CTkRadioButton(small_frame, text="No", fg_color='blue', hover_color="white", font=label_font,
                                       command=yes_radio.deselect)
         no_radio.place(x=x_spacing + input_width + self.width * 0.1, y=y, anchor="center")
 
-        if self.only_odd_harmonics: #initial values
+        if self.only_harmonics: #initial values
             yes_radio.select()
         else:
             no_radio.select()
@@ -447,7 +447,7 @@ class App(ctk.CTk):
             self.dc_offset = float(dc_entry.get())
 
             # Save harmonic preference and triggering using your _check_state method
-            self.only_odd_harmonics = True if yes_radio._check_state else False
+            self.only_harmonics = True if yes_radio._check_state else False
             self.triggering_enabled = True if trig_yes_radio._check_state else False
 
             # Save DAQ parameters
@@ -463,7 +463,7 @@ class App(ctk.CTk):
                 f"Frequency: {self.frequency}\n"
                 f"Channel #: {self.channel}\n"
                 f"DC Offset: {self.dc_offset}\n"
-                f"Only Odd Harmonics: {self.only_odd_harmonics}\n"
+                f"Only Harmonics: {self.only_harmonics}\n"
                 f"Triggering Enabled: {self.triggering_enabled}\n"
                 f"DAQ Signal Channel: {self.daq_signal_channel}\n"
                 f"DAQ Current Channel: {self.daq_current_channel}\n"
@@ -724,7 +724,7 @@ class App(ctk.CTk):
         (num_samples, sample_magnitude, signal_frequency, signal_with_background, sample_phase, i_rms,
          signal_with_background_complex, sample_complex) = analyze.get_sample_signal(
             daq_signal, daq_source, daq_trigger, sample_rate, num_periods, gpib_address, V_amplitude,
-            frequency, channel, dc_current, background_complex, self.only_odd_harmonics)
+            frequency, channel, dc_current, background_complex, self.only_harmonics)
 
         sample_phase = np.abs(sample_magnitude)
         self.signal_with_background = signal_with_background
@@ -1068,7 +1068,7 @@ class App(ctk.CTk):
                 'frequency': getattr(self, 'frequency', None),
                 'channel': getattr(self, 'channel', None),
                 'dc_offset': getattr(self, 'dc_offset', None),
-                'only_odd_harmonics': getattr(self, 'only_odd_harmonics', None),
+                'only_harmonics': getattr(self, 'only_harmonics', None),
                 'triggering_enabled': getattr(self, 'triggering_enabled', None),
                 'daq_signal_channel': getattr(self, 'daq_signal_channel', None),
                 'daq_current_channel': getattr(self, 'daq_current_channel', None),
