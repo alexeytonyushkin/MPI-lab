@@ -39,7 +39,7 @@ To run this application, you'll need Python 3.7+ installed along with the requir
 ---
 ## Buttons and Their Functionality
 
-### 1. File Button
+### 1. Settings Button
    - **Description**: This button opens a dropdown menu for system and file management options.
    - **Functionality**: When clicked, it displays several options for the user to choose from:
      - **Save Results**
