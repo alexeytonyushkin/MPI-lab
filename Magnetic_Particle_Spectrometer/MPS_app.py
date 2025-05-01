@@ -29,6 +29,7 @@ class App(ctk.CTk):
         self.zoom_to_11_enabled = True
         self.sample_frequency_array_magnitude = None
         self.run = 0
+
         self.title("MPS App")
         self.width = self.winfo_screenwidth()
         self.height = self.winfo_screenheight()
@@ -61,7 +62,7 @@ class App(ctk.CTk):
         btn_height = int(self.height * 0.04)
         btn_y = self.height // 36
 
-        # Total number of buttons (including File)
+        # Total number of buttons (including Settings)
         num_buttons = 7
         total_spacing_width = self.width * 0.8  # spread buttons across 80% of window
         start_x = (self.width - total_spacing_width) / 2
@@ -109,6 +110,12 @@ class App(ctk.CTk):
                                                  command=self.open_auto_mode_dropdown,
                                                  width=btn_width, height=btn_height)
         self.title_bar.auto_mode.place(x=start_x + btn_spacing * 6, y=btn_y, anchor='center')
+
+        ############### Help Button ####################
+        self.help_window = "main" #to know what guidance text to display
+        self.help_button = ctk.CTkButton(self.title_bar, text="?", font=('Arial', int(self.height * 0.018)),
+                                         width=btn_width//6, height = btn_height, command= self.help)
+        self.help_button.place(x=start_x + btn_spacing*6 + self.width * 0.08, y=btn_y, anchor='center')
 
         ############### Figures ########################
         x_fig = 5.5
@@ -584,6 +591,29 @@ class App(ctk.CTk):
 
         save_button = ctk.CTkButton(frame, text="Save Settings", command=save_values)
         save_button.place(relx=0.5, rely=0.9, relwidth=0.6, anchor="center")
+
+    def help(self):
+        help_window = ctk.CTkToplevel(self)
+        help_window.title("Setup Analysis")
+        help_window.geometry(str(self.width // 8) + "x" + str(self.height // 4))
+        help_window.attributes("-topmost", True)
+
+        help_text = ctk.CTkTextbox(help_window, bg_color="white", state= 'normal') #will disable after inserting text
+        help_text.pack(fill="both", expand=True)
+        if self.help_window == "main":
+            help_txt = """
+                # Magnetic Particle Spectrometer Application (MPS App)
+
+                ## Description
+                
+                This application provides a user-friendly interface to control the Magnetic Particle Spectrometer at Oakland University, which is made up of dc biasing helholtz coils, drive coil, a receive coil, and a cancelation coil. It utilizes Python libraries such as `cutsomTkinter`, `matplotlib`, and `nidaqmx` to interact with hardware and visualize results.
+                
+                ---
+                
+                ## Getting Started
+            """
+            help_text.insert("0.0", help_txt)
+            help_text.configure(state='disabled')
     ##################### functions to run data acquisition #####################
     def calibrate_H_V(self):
         self.H_cal = np.zeros(50)               #array to store the calibrated field
