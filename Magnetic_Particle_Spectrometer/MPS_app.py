@@ -67,9 +67,9 @@ class App(ctk.CTk):
         btn_spacing = total_spacing_width / (num_buttons - 1)
 
         # Place each button with consistent spacing
-        self.title_bar.file = ctk.CTkButton(self.title_bar, text="File",
+        self.title_bar.file = ctk.CTkButton(self.title_bar, text="Settings",
                                             font=('Arial', int(self.height * 0.018)),
-                                            command=self.open_files_dropdown,
+                                            command=self.open_settings_dropdown,
                                             width=btn_width, height=btn_height)
         self.title_bar.file.place(x=start_x + btn_spacing * 0, y=btn_y, anchor='center')
 
@@ -243,7 +243,7 @@ class App(ctk.CTk):
         toolbar.update()
         toolbar.place(x=self.width//2, y=self.height*0.8, anchor='center')
 
-    def open_files_dropdown(self):
+    def open_settings_dropdown(self):
         dropdown_window = ctk.CTkToplevel(self)
         dropdown_window.title("Select Option")
         dropdown_window.geometry("200x150")
@@ -509,6 +509,36 @@ class App(ctk.CTk):
         if self.zoom_to_11_enabled:
             zoom_checkbox.select()
 
+        height = plot_settings_window.winfo_height()
+        width = plot_settings_window.winfo_width()
+
+        label_font = ("Arial", int(self.height * 0.012))
+        x_spacing = width * 0.2
+        y= height *0.7
+
+        # Only Plot harmonics?
+        def select_yes():
+            no_radio.deselect()
+            self.only_harmonics = True
+
+        def select_no():
+            self.only_harmonics = False
+            yes_radio.deselect()
+
+        harmonics_label = ctk.CTkLabel(plot_settings_window, text="Only Plot Harmonics?", font=label_font)
+        harmonics_label.place(x=x_spacing, y=y, anchor="center")
+        yes_radio = ctk.CTkRadioButton(plot_settings_window, text="Yes", fg_color='blue', hover_color="white", font=label_font,
+                                       command=select_yes)
+        yes_radio.place(x=x_spacing + width * 0.45, y=y, anchor="center")
+        no_radio = ctk.CTkRadioButton(plot_settings_window, text="No", fg_color='blue', hover_color="white", font=label_font,
+                                      command=select_no)
+        no_radio.place(x=x_spacing + width * 0.75, y=y, anchor="center")
+
+        if self.only_harmonics: #initial values
+            yes_radio.select()
+        else:
+            no_radio.select()
+
     def open_auto_mode_dropdown(self):
         dropdown_window = ctk.CTkToplevel(self)
         dropdown_window.title("Auto Mode")
@@ -549,7 +579,7 @@ class App(ctk.CTk):
 
         save_button = ctk.CTkButton(frame, text="Save Settings", command=save_values)
         save_button.place(relx=0.5, rely=0.9, relwidth=0.6, anchor="center")
-    #####################functions to run data#####################
+    ##################### functions to run data acquisition #####################
     def calibrate_H_V(self):
         self.H_cal = np.zeros(50)               #array to store the calibrated field
         self.V_cal = np.zeros(50)
