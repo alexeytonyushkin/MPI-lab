@@ -19,6 +19,7 @@ ctk.set_default_color_theme("dark-blue")
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.additional_information = None
         self.phases = None
         self.num_steps = 50
         self.i_dc = None
@@ -267,7 +268,7 @@ class App(ctk.CTk):
             if selected == "Setup Analysis":
                 threading.Thread(target=self.open_setup_analysis_window).start()
             elif selected == "Save Results":
-                threading.Thread(target=self.save_results).start()
+                threading.Thread(target=self.save_input).start()
             elif selected == "Plot Settings":
                 threading.Thread(target=self.open_plot_settings_window).start()
 
@@ -1216,6 +1217,28 @@ class App(ctk.CTk):
             self.canvas6.draw()
 
     ####################### function to save results #########################
+    def save_input(self):
+        save_window = ctk.CTkToplevel(self)
+        save_window.title("Setup Analysis")
+        save_window.geometry( "300x200" )
+        save_window.attributes("-topmost", True)
+
+        time.sleep(0.02)  # I noticed that the window needed time to initialize, so I set a delay here of 20 ms
+        width = save_window.winfo_width()
+        height = save_window.winfo_height()
+
+        message_box_title = ctk.CTkLabel(save_window, text="Input additional information if needed:")
+        message_box_title.place(x=width * 0.5, y=height *0.1, anchor='center')
+        message_box_entry = ctk.CTkEntry(save_window, width= int(width * 0.9))
+        message_box_entry.place(x=width *0.5, y=height * 0.4, anchor="center")
+
+        def save():
+            self.additional_information = message_box_entry.get() #record the user input
+            self.save_results() #to save to MATLAB
+
+        save_button = ctk.CTkButton(save_window, command=save, text="Save")
+        save_button.place(x=width *0.5, y=height * 0.7, anchor="center")
+
     def save_results(self):
         filename = filedialog.asksaveasfilename(defaultextension=".mat",
                                                 filetypes=[("MATLAB files", "*.mat"), ("All files", "*.*")])
@@ -1236,6 +1259,7 @@ class App(ctk.CTk):
             data['instructions'] = instructions
 
             parameters = {
+                'Information': getattr(self, 'additional_information', None),
                 'mode': getattr(self, 'mode', None),
                 'ac_amplitude': getattr(self, 'ac_amplitude', None),
                 'frequency': getattr(self, 'frequency', None),
