@@ -477,6 +477,8 @@ class App(ctk.CTk):
             self.parameter_textbox.insert("0.0", result_text)
             self.parameter_textbox.configure(state="disabled")
 
+            self.direct_update() #to update the plots and arrays
+
             #setup_window.destroy()
 
         #textbox to show updated parameters
@@ -520,10 +522,12 @@ class App(ctk.CTk):
         def select_yes():
             no_radio.deselect()
             self.only_harmonics = True
+            self.direct_update() #directly update the arrays and plots
 
         def select_no():
             self.only_harmonics = False
             yes_radio.deselect()
+            self.direct_update()
 
         harmonics_label = ctk.CTkLabel(plot_settings_window, text="Only Plot Harmonics?", font=label_font)
         harmonics_label.place(x=x_spacing, y=y, anchor="center")
@@ -636,6 +640,7 @@ class App(ctk.CTk):
 
     def run_background_subtraction(self):
         # Turn the live_frequency display off if if it's on by switching state to 0:
+        self.mode = "background"
         self.on_off = 0
 
         # Retrieve necessary parameters from the GUI
@@ -665,6 +670,7 @@ class App(ctk.CTk):
                                                             frequency)
 
         # Store the values in the self object to later have the option of saving them as .mat files
+        self.num_samples = num_samples
         self.background_frequency_array_magnitude = background_magnitude
         self.background_frequency_array_frequency = background_frequency
         self.background_frequency_array_phase = background_phase
@@ -758,6 +764,7 @@ class App(ctk.CTk):
             frequency, channel, dc_current, background_complex, self.only_harmonics)
 
         sample_phase = np.abs(sample_magnitude)
+        self.num_samples = num_samples
         self.signal_with_background = signal_with_background
         self.signal_frequency_array_amplitude = signal_with_background_complex #this is the sample with its background (raw fourrier transform)
         self.sample_frequency_array_magnitude = sample_magnitude
@@ -1110,6 +1117,104 @@ class App(ctk.CTk):
         self.ax5.legend()
         self.canvas4.draw()
         self.canvas5.draw()
+
+    def direct_update(self):
+        if self.mode == "standard sample":
+            fourier_complex = self.sample_frequency_array_amplitude
+            fourier_freq = self.sample_frequency_array_frequency
+        elif self.mode == "background":
+            fourier_complex = self.background_frequency_array_complex
+            fourier_freq = self.background_frequency_array_frequency
+        else:
+            return
+        #If we already have data, need to update plots:
+        fourier_magnitude = np.abs(fourier_complex)
+
+        if self.only_harmonics: #if we want to only plot harmonics
+            fourier_magnitude = analyze.harmonics(fourier_magnitude, fourier_freq, self.frequency, self.sample_rate)
+
+        # reconstruct the waveform over one period and get the magnetization (integral)
+        recon, integral = analyze.reconstruct_and_integrate(self.num_samples, fourier_freq, fourier_magnitude,
+                                                            self.frequency)
+
+        self.magnetization = integral  # to save to .mat file
+
+        # Update Plots:
+        self.ax1.clear()
+        self.ax1.set_title("Daq Readout", fontsize=11)
+        self.ax1.set_xlabel("Number Of Samples", fontsize=10)
+        self.ax1.set_ylabel("Magnitude", fontsize=10)
+        self.fig1.tight_layout()
+        # self.ax1.set_facecolor('#505050')
+
+        if self.mode == "standard sample":
+            self.ax1.plot(self.signal_with_background)
+        elif self.mode == "background":
+            self.ax1.plot(self.background)
+
+        self.canvas1.draw()
+
+        self.ax2.clear()
+        self.ax2.set_title("Sample's Frequency Spectrum (Backsubtracted)", fontsize=11)
+        self.ax2.set_xlabel("Frequency, kHz", fontsize=10)
+        self.ax2.set_ylabel("Magnitude", fontsize=10)
+        if self.zoom_to_11_enabled:
+            self.ax2.set_xlim(left=0, right=11)  # Zoom in to 11 harmonics
+            self.ax2.set_xticks(range(1, 12))  # Tick from 1 to 11
+        else:
+            if self.sample_rate == 100000:
+                self.ax2.set_xticks([1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49])
+            elif self.sample_rate == 1000000:
+                self.ax2.set_xticks([25, 75, 125, 175, 225, 275, 325, 375, 425, 475])
+
+        self.ax2.plot(fourier_freq / 1000, fourier_magnitude)
+
+        self.canvas2.draw()
+
+        self.ax3.clear()
+        self.ax3.set_title("Reconstructed Waveform", fontsize=11)
+        self.ax3.set_xlabel("One Period", fontsize=10)
+        self.ax3.set_ylabel("Magnitude", fontsize=10)
+        # self.ax3.set_facecolor('#505050')
+
+        self.ax3.plot(recon)
+
+        self.canvas3.draw()
+
+        self.ax4.clear()
+        self.ax4.set_title("Magnetization", fontsize=11)
+        self.ax4.set_xlabel("One Period", fontsize=10)
+        self.ax4.set_ylabel("Magnitude", fontsize=10)
+        # self.ax3.set_facecolor('#505050')
+
+        self.ax4.plot(integral)
+
+        self.canvas4.draw()
+
+        if self.mode == "standard sample":
+            H = self.H_field
+
+            self.ax5.clear()
+            self.ax5.set_title("dM/dH Curve", fontsize=11)
+            self.ax5.set_xlabel("H", fontsize=10)
+            self.ax5.set_ylabel("dM/dH", fontsize=10)
+            # Need half of a period for MH and dM/dH:
+            # integral = integral[:len(integral) // 2]
+            # H = H[:len(H) // 2]
+            dMdH = analyze.dMdH(integral, H)
+
+            self.ax5.plot(H, dMdH)
+
+            self.canvas5.draw()
+
+            self.ax6.set_title("MH Curve comparison", fontsize=11)
+            self.ax6.set_xlabel("H", fontsize=10)
+            self.ax6.set_ylabel("M", fontsize=10)
+            self.ax6.plot(H, integral, label='Run#' + str(self.run))
+
+            self.ax6.legend(loc='upper left')
+            self.canvas6.draw()
+
     ####################### function to save results #########################
     def save_results(self):
         filename = filedialog.asksaveasfilename(defaultextension=".mat",
