@@ -594,17 +594,9 @@ class App(ctk.CTk):
         save_button.place(relx=0.5, rely=0.9, relwidth=0.6, anchor="center")
 
     def help(self):
-        help_window = ctk.CTkToplevel(self)
-        help_window.title("Setup Analysis")
-        help_window.geometry(str(self.width // 8) + "x" + str(self.height // 4))
-        help_window.attributes("-topmost", True)
-
-        help_text = ctk.CTkTextbox(help_window, bg_color="white", state= 'normal') #will disable after inserting text
-        help_text.pack(fill="both", expand=True)
-        if self.help_window == "main":
-            # URL to the rendered README.md on GitHub
-            url = "https://github.com/alexeytonyushkin/MPI-lab/blob/main/Magnetic_Particle_Spectrometer/README.md"
-            webbrowser.open(url)
+        # URL to the rendered README.md on GitHub
+        url = "https://github.com/alexeytonyushkin/MPI-lab/blob/main/Magnetic_Particle_Spectrometer/README.md"
+        webbrowser.open(url)
     ##################### functions to run data acquisition #####################
     def calibrate_H_V(self):
         self.H_cal = np.zeros(50)               #array to store the calibrated field
