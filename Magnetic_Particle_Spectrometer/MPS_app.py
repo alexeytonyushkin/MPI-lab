@@ -7,6 +7,7 @@ import wave_gen
 import nidaqmx
 import time
 import threading
+import webbrowser
 
 from scipy.io import savemat
 from matplotlib.backends._backend_tk import NavigationToolbar2Tk
@@ -601,19 +602,9 @@ class App(ctk.CTk):
         help_text = ctk.CTkTextbox(help_window, bg_color="white", state= 'normal') #will disable after inserting text
         help_text.pack(fill="both", expand=True)
         if self.help_window == "main":
-            help_txt = """
-                # Magnetic Particle Spectrometer Application (MPS App)
-
-                ## Description
-                
-                This application provides a user-friendly interface to control the Magnetic Particle Spectrometer at Oakland University, which is made up of dc biasing helholtz coils, drive coil, a receive coil, and a cancelation coil. It utilizes Python libraries such as `cutsomTkinter`, `matplotlib`, and `nidaqmx` to interact with hardware and visualize results.
-                
-                ---
-                
-                ## Getting Started
-            """
-            help_text.insert("0.0", help_txt)
-            help_text.configure(state='disabled')
+            # URL to the rendered README.md on GitHub
+            url = "https://github.com/alexeytonyushkin/MPI-lab/blob/main/Magnetic_Particle_Spectrometer/README.md"
+            webbrowser.open(url)
     ##################### functions to run data acquisition #####################
     def calibrate_H_V(self):
         self.H_cal = np.zeros(50)               #array to store the calibrated field
