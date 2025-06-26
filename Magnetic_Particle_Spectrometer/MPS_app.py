@@ -456,12 +456,12 @@ class App(ctk.CTk):
 
         system_label = ctk.CTkLabel(daq_frame, text="MPS System:", font=label_font)
         system_label.place(x=daq_x_spacing, y=daq_y, anchor="center")
-        sys_big_radio = ctk.CTkRadioButton(small_frame, text="Big", fg_color='blue', hover_color="white",
+        sys_big_radio = ctk.CTkRadioButton(daq_frame, text="Big", fg_color='blue', hover_color="white",
                                             font=label_font)
-        sys_big_radio.place(x=daq_x_spacing + input_width + self.width * 0.02, y=y, anchor="center")
-        sys_small_radio = ctk.CTkRadioButton(small_frame, text="Small", fg_color='blue', hover_color="white",
+        sys_big_radio.place(x=daq_x_spacing + input_width + self.width * 0.02, y=daq_y, anchor="center")
+        sys_small_radio = ctk.CTkRadioButton(daq_frame, text="Small", fg_color='blue', hover_color="white",
                                            font=label_font)
-        sys_small_radio.place(x=daq_x_spacing + input_width + self.width * 0.1, y=y, anchor="center")
+        sys_small_radio.place(x=daq_x_spacing + input_width + self.width * 0.1, y=daq_y, anchor="center")
 
         if self.big_system:
             sys_big_radio.select()
